@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"flag"
+
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -40,9 +42,10 @@ func init() {
 }
 
 func (t *Map) getPlaces() []Place {
+	fmt.Println("get places")
 	var nodes []*cdp.Node
 	err := chromedp.Run(t.ctx,
-		chromedp.Sleep(5*time.Second),
+		// chromedp.Sleep(5*time.Second),
 		chromedp.Nodes("a.hfpxzc", &nodes, chromedp.ByQueryAll),
 	)
 	if err != nil {
@@ -60,9 +63,10 @@ func (t *Map) getPlaces() []Place {
 }
 
 func (t *Map) scrollDown() {
+	fmt.Println("scroll down")
 	for i := 0; i < 5; i++ {
 		err := chromedp.Run(t.ctx,
-			chromedp.Sleep(5*time.Second),
+			// chromedp.Sleep(5*time.Second),
 			chromedp.Evaluate(`document.querySelector("#QA0Szd > div > div > div.w6VYqd > div.bJzME.tTVLSc > div > div.e07Vkf.kA9KIf > div > div > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd").scroll(0,document.querySelector("#QA0Szd > div > div > div.w6VYqd > div.bJzME.tTVLSc > div > div.e07Vkf.kA9KIf > div > div > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd > div.m6QErb.DxyBCb.kA9KIf.dS8AEf.ecceSd").scrollHeight)`, nil),
 		)
 		if err != nil {
@@ -73,7 +77,7 @@ func (t *Map) scrollDown() {
 
 func (t *Map) nextPage() {
 	err := chromedp.Run(t.ctx,
-		chromedp.Click("#ppdPk-Ej1Yeb-LgbsSe-tJiF1e", chromedp.ByQuery),
+		chromedp.Click("#eY4Fjd", chromedp.ByQuery),
 		chromedp.Sleep(4*time.Second),
 	)
 	if err != nil {
@@ -114,7 +118,7 @@ func main() {
 	defer cancel()
 
 	err := chromedp.Run(ctx,
-		chromedp.Navigate(m.BASE_URL+*latitude+","+*longitude+"/"+m.zoom),
+		chromedp.Navigate(m.BASE_URL+*latitude+","+*longitude+","+m.zoom),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -122,17 +126,14 @@ func main() {
 
 	places := make(map[string]Place)
 
-	bar := progressbar.Default(100)
 	for i := 0; i < *numberOfPages; i++ {
-		bar.Add(100 / *numberOfPages)
+
 		m.scrollDown()
 		for _, place := range m.getPlaces() {
 			places[place.Name] = place
 		}
 		m.nextPage()
 	}
-
-	bar.Set(100)
 
 	m.dumpToJson(places, *output)
 
